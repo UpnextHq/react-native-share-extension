@@ -1,76 +1,68 @@
 package com.alinz.parkerdan.shareextension;
 
+import com.alinz.parkerdan.shareextension.RealPathUtil;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.Arguments;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 
-import android.graphics.Bitmap;
-import java.io.InputStream;
-
 
 public class ShareModule extends ReactContextBaseJavaModule {
 
+    public ShareModule(ReactApplicationContext reactContext) {
+        super(reactContext);
+    }
 
-  public ShareModule(ReactApplicationContext reactContext) {
-      super(reactContext);
-  }
+    @Override
+    public String getName() {
+        return "ReactNativeShareExtension";
+    }
 
-  @Override
-  public String getName() {
-      return "ReactNativeShareExtension";
-  }
-
-  @ReactMethod
-  public void close() {
-    getCurrentActivity().finish();
-  }
-
-  @ReactMethod
-  public void data(Promise promise) {
-      promise.resolve(processIntent());
-  }
-
-  public WritableMap processIntent() {
-      WritableMap map = Arguments.createMap();
-
-      String value = "";
-      String type = "";
-      String action = "";
-
-      Activity currentActivity = getCurrentActivity();
-
-      if (currentActivity != null) {
-        Intent intent = currentActivity.getIntent();
-        action = intent.getAction();
-        type = intent.getType();
-        if (type == null) {
-          type = "";
+    @ReactMethod
+    public void close() {
+        Activity currentActivity = getCurrentActivity();
+        if (currentActivity != null) {
+            currentActivity.finish();
         }
-        if (Intent.ACTION_SEND.equals(action) && "text/plain".equals(type)) {
-          value = intent.getStringExtra(Intent.EXTRA_TEXT);
+    }
+
+    @ReactMethod
+    public void data(Promise promise) {
+        try {
+            promise.resolve(processIntent());
+        } catch (Throwable t) {
+            promise.reject(t);
         }
-        else if (Intent.ACTION_SEND.equals(action) && ("image/*".equals(type) || "image/jpeg".equals(type) || "image/png".equals(type) || "image/jpg".equals(type) ) ) {
-          Uri uri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
-         value = "file://" + RealPathUtil.getRealPathFromURI(currentActivity, uri);
+    }
 
-       } else {
-         value = "";
-       }
-      } else {
-        value = "";
-        type = "";
-      }
+    public WritableArray processIntent() {
+        WritableArray sharedData = Arguments.createArray();
 
-      map.putString("type", type);
-      map.putString("value",value);
+        Activity currentActivity = getCurrentActivity();
 
-      return map;
-  }
+        if (currentActivity != null) {
+            Intent intent = currentActivity.getIntent();
+            if (!Intent.ACTION_SEND.equals(intent.getAction())) {
+                return sharedData;
+            }
+
+            sharedData.pushString(intent.getStringExtra(Intent.EXTRA_TEXT));
+            sharedData.pushString(intent.getDataString());
+            sharedData.pushString(intent.getStringExtra(Intent.EXTRA_SUBJECT));
+            sharedData.pushString(intent.getStringExtra(Intent.EXTRA_TITLE));
+
+            Uri uri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
+            if (uri != null) {
+                sharedData.pushString("file://" + RealPathUtil.getRealPathFromURI(currentActivity, uri));
+            }
+        }
+
+        return sharedData;
+    }
 }

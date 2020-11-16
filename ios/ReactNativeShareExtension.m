@@ -15,38 +15,37 @@ NSExtensionContext* extensionContext;
 }
 
 - (UIView*) shareView {
-    return nil;
+  return nil;
 }
 
 RCT_EXPORT_MODULE();
 
 - (void)viewDidLoad {
-    [super viewDidLoad];
+  [super viewDidLoad];
 
-    //object variable for extension doesn't work for react-native. It must be assign to gloabl
-    //variable extensionContext. in this way, both exported method can touch extensionContext
-    extensionContext = self.extensionContext;
+  //object variable for extension doesn't work for react-native. It must be assign to gloabl
+  //variable extensionContext. in this way, both exported method can touch extensionContext
+  extensionContext = self.extensionContext;
 
-    UIView *rootView = [self shareView];
-    if (rootView.backgroundColor == nil) {
-        rootView.backgroundColor = [[UIColor alloc] initWithRed:1 green:1 blue:1 alpha:0.1];
-    }
+  UIView *rootView = [self shareView];
+  if (rootView.backgroundColor == nil) {
+    rootView.backgroundColor = [[UIColor alloc] initWithRed:1 green:1 blue:1 alpha:0.1];
+  }
 
-    self.view = rootView;
+  self.view = rootView;
 }
 
 
 RCT_EXPORT_METHOD(close) {
-    [extensionContext completeRequestReturningItems:nil
-                                  completionHandler:nil];
+  [extensionContext completeRequestReturningItems:nil
+                                completionHandler:nil];
 }
 
 
 
 RCT_EXPORT_METHOD(openURL:(NSString *)url) {
-  UIApplication *application = [UIApplication sharedApplication];
   NSURL *urlToOpen = [NSURL URLWithString:[url stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
-  [application openURL:urlToOpen options:@{} completionHandler: nil];
+  [self openURL:[urlToOpen absoluteString]];
 }
 
 
@@ -55,75 +54,77 @@ RCT_REMAP_METHOD(data,
                  resolver:(RCTPromiseResolveBlock)resolve
                  rejecter:(RCTPromiseRejectBlock)reject)
 {
-    [self extractDataFromContext: extensionContext withCallback:^(NSString* val, NSString* contentType, NSException* err) {
-        if(err) {
-            reject(@"error", err.description, nil);
-        } else {
-            resolve(@{
-                      @"type": contentType,
-                      @"value": val
-                      });
-        }
-    }];
+  [self extractDataFromContext:extensionContext withCallback:^(NSArray* data, NSException* err) {
+    if(err) {
+      reject(@"error", err.description, nil);
+    } else {
+      resolve(data);
+    }
+  }];
 }
 
-- (void)extractDataFromContext:(NSExtensionContext *)context withCallback:(void(^)(NSString *value, NSString* contentType, NSException *exception))callback {
-    @try {
-        NSExtensionItem *item = [context.inputItems firstObject];
-        NSArray *attachments = item.attachments;
-
-        __block NSItemProvider *urlProvider = nil;
-        __block NSItemProvider *imageProvider = nil;
-        __block NSItemProvider *textProvider = nil;
-
-        [attachments enumerateObjectsUsingBlock:^(NSItemProvider *provider, NSUInteger idx, BOOL *stop) {
-            if([provider hasItemConformingToTypeIdentifier:URL_IDENTIFIER]) {
-                urlProvider = provider;
-                *stop = YES;
-            } else if ([provider hasItemConformingToTypeIdentifier:TEXT_IDENTIFIER]){
-                textProvider = provider;
-                *stop = YES;
-            } else if ([provider hasItemConformingToTypeIdentifier:IMAGE_IDENTIFIER]){
-                imageProvider = provider;
-                *stop = YES;
-            }
-        }];
-
-        if(urlProvider) {
-            [urlProvider loadItemForTypeIdentifier:URL_IDENTIFIER options:nil completionHandler:^(id<NSSecureCoding> item, NSError *error) {
-                NSURL *url = (NSURL *)item;
-
-                if(callback) {
-                    callback([url absoluteString], @"text/plain", nil);
-                }
-            }];
-        } else if (imageProvider) {
-            [imageProvider loadItemForTypeIdentifier:IMAGE_IDENTIFIER options:nil completionHandler:^(id<NSSecureCoding> item, NSError *error) {
-                NSURL *url = (NSURL *)item;
-
-                if(callback) {
-                    callback([url absoluteString], [[[url absoluteString] pathExtension] lowercaseString], nil);
-                }
-            }];
-        } else if (textProvider) {
-            [textProvider loadItemForTypeIdentifier:TEXT_IDENTIFIER options:nil completionHandler:^(id<NSSecureCoding> item, NSError *error) {
-                NSString *text = (NSString *)item;
-
-                if(callback) {
-                    callback(text, @"text/plain", nil);
-                }
-            }];
-        } else {
-            if(callback) {
-                callback(nil, nil, [NSException exceptionWithName:@"Error" reason:@"couldn't find provider" userInfo:nil]);
-            }
-        }
+- (void)processShareAttachment:(NSEnumerator<NSItemProvider*> *)attachmentEnumerator
+                     intoArray:(NSMutableArray*)dataArray
+         withCompletionHandler:(void(^)(NSArray *dataArray, NSException *exception))handler {
+  @try {
+    NSItemProvider *provider = [attachmentEnumerator nextObject];
+    if (!provider) {
+      handler(dataArray, nil);
+      return;
     }
-    @catch (NSException *exception) {
-        if(callback) {
-            callback(nil, nil, exception);
+
+    if ([provider hasItemConformingToTypeIdentifier:URL_IDENTIFIER]) {
+      [provider loadItemForTypeIdentifier:URL_IDENTIFIER options:nil completionHandler:^(id<NSSecureCoding> item, NSError *error) {
+        @try {
+          NSURL *url = (NSURL *)item;
+          [dataArray addObject:[url absoluteString]];
+          [self processShareAttachment:attachmentEnumerator intoArray:dataArray withCompletionHandler:handler];
+        } @catch (NSException *exception) {
+          if (handler) {
+            handler(nil, exception);
+          }
         }
+      }];
+    } else if ([provider hasItemConformingToTypeIdentifier:TEXT_IDENTIFIER]){
+      [provider loadItemForTypeIdentifier:TEXT_IDENTIFIER options:nil completionHandler:^(id<NSSecureCoding> item, NSError *error) {
+        @try {
+          NSString *text = (NSString *)item;
+          [dataArray addObject:text];
+
+          [self processShareAttachment:attachmentEnumerator intoArray:dataArray withCompletionHandler:handler];
+        } @catch (NSException *exception) {
+          if (handler) {
+            handler(nil, exception);
+          }
+        }
+      }];
+    } else {
+      [self processShareAttachment:attachmentEnumerator intoArray:dataArray withCompletionHandler:handler];
     }
+  } @catch (NSException *exception) {
+    if (handler) {
+      handler(nil, exception);
+    }
+  }
+
+}
+
+- (void)extractDataFromContext:(NSExtensionContext *)context withCallback:(void(^)(NSArray *dataArray, NSException *exception))callback {
+  @try {
+    NSExtensionItem *item = [context.inputItems firstObject];
+    NSMutableArray *parsedAttachments = [NSMutableArray array];
+
+    [self processShareAttachment:[item.attachments objectEnumerator] intoArray:parsedAttachments withCompletionHandler:callback];
+  } @catch (NSException *exception) {
+    if (callback) {
+      callback(nil, exception);
+    }
+  }
+}
+
++ (BOOL)requiresMainQueueSetup
+{
+    return NO;
 }
 
 @end
