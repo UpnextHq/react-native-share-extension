@@ -124,6 +124,8 @@ RCT_REMAP_METHOD(data,
 
 + (BOOL)requiresMainQueueSetup
 {
+    // Not sure if this is required or not here, setting to yes because of some race conditions
+    // we're seeing in the share extension load process
     return YES;
 }
 
