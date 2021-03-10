@@ -7,6 +7,7 @@
 #define TEXT_IDENTIFIER (NSString *)kUTTypePlainText
 
 NSExtensionContext* extensionContext;
+UIView *rootView;
 
 @implementation ReactNativeShareExtension {
     NSTimer *autoTimer;
@@ -27,7 +28,7 @@ RCT_EXPORT_MODULE();
   //variable extensionContext. in this way, both exported method can touch extensionContext
   extensionContext = self.extensionContext;
 
-  UIView *rootView = [self shareView];
+  rootView = [self shareView];
   if (rootView.backgroundColor == nil) {
     rootView.backgroundColor = [[UIColor alloc] initWithRed:1 green:1 blue:1 alpha:0.1];
   }
@@ -61,6 +62,27 @@ RCT_REMAP_METHOD(data,
       resolve(data);
     }
   }];
+}
+
+
+RCT_REMAP_METHOD(getShareExtensionPosition,
+                 getShareExtensionPositionWithResolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject) {
+    
+    if (rootView == nil) {
+        resolve();
+        return;
+    }
+    
+    CGRect rootViewPosition = [rootView convertRect:rootView.frame toCoordinateSpace:[UIScreen mainScreen].fixedCoordinateSpace];
+
+    NSDictionary *result = [[NSDictionary alloc] init];
+    [result setValue:[NSNumber numberWithFloat:rootViewPosition.origin.x] forKey:@"x"];
+    [result setValue:[NSNumber numberWithFloat:rootViewPosition.origin.y] forKey:@"y"];
+    [result setValue:[NSNumber numberWithFloat:rootViewPosition.size.width] forKey:@"width"];
+    [result setValue:[NSNumber numberWithFloat:rootViewPosition.size.height] forKey:@"height"];
+
+    resolve(result);
 }
 
 - (void)processShareAttachment:(NSEnumerator<NSItemProvider*> *)attachmentEnumerator
