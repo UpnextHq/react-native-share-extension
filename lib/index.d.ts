@@ -11,7 +11,7 @@ interface ShareExtension {
   close(): void;
   data(): Promise<ShareData>;
   openURL(uri: string): void;
-  getShareExtensionPosition(): Promise<ShareExtensionPosition | undefined>
+  getShareExtensionPosition(): Promise<ShareExtensionPosition | null>
 }
 
 declare const RNShareExtension: ShareExtension;

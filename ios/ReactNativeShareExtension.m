@@ -69,7 +69,7 @@ RCT_REMAP_METHOD(getShareExtensionPosition,
                  rejecter:(RCTPromiseRejectBlock)reject) {
     @try {
         if (rootView == nil) {
-            resolve();
+            resolve([NSNUll null]);
             return;
         }
 
