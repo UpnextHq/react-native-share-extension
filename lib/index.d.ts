@@ -1,6 +1,6 @@
 type ShareData = Array<string | undefined>;
 
-type ShareExtensionPosition = {
+export type ShareExtensionPosition = {
   x: number;
   y: number;
   width: number;
