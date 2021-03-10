@@ -64,25 +64,27 @@ RCT_REMAP_METHOD(data,
   }];
 }
 
-
 RCT_REMAP_METHOD(getShareExtensionPosition,
                  getShareExtensionPositionWithResolver:(RCTPromiseResolveBlock)resolve
                  rejecter:(RCTPromiseRejectBlock)reject) {
-    
-    if (rootView == nil) {
-        resolve();
-        return;
+    @try {
+        if (rootView == nil) {
+            resolve();
+            return;
+        }
+        
+        CGRect rootViewPosition = [rootView convertRect:rootView.frame toCoordinateSpace:[UIScreen mainScreen].fixedCoordinateSpace];
+        
+        NSDictionary *result = [[NSMutableDictionary alloc] init];
+        [result setValue:[NSNumber numberWithFloat:rootViewPosition.origin.x] forKey:@"x"];
+        [result setValue:[NSNumber numberWithFloat:rootViewPosition.origin.y] forKey:@"y"];
+        [result setValue:[NSNumber numberWithFloat:rootViewPosition.size.width] forKey:@"width"];
+        [result setValue:[NSNumber numberWithFloat:rootViewPosition.size.height] forKey:@"height"];
+
+        resolve(@[result]);
+    } @catch (NSException *e) {
+        reject(@"error", e.description, nil);
     }
-    
-    CGRect rootViewPosition = [rootView convertRect:rootView.frame toCoordinateSpace:[UIScreen mainScreen].fixedCoordinateSpace];
-
-    NSDictionary *result = [[NSDictionary alloc] init];
-    [result setValue:[NSNumber numberWithFloat:rootViewPosition.origin.x] forKey:@"x"];
-    [result setValue:[NSNumber numberWithFloat:rootViewPosition.origin.y] forKey:@"y"];
-    [result setValue:[NSNumber numberWithFloat:rootViewPosition.size.width] forKey:@"width"];
-    [result setValue:[NSNumber numberWithFloat:rootViewPosition.size.height] forKey:@"height"];
-
-    resolve(@[result]);
 }
 
 - (void)processShareAttachment:(NSEnumerator<NSItemProvider*> *)attachmentEnumerator
