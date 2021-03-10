@@ -69,7 +69,7 @@ RCT_REMAP_METHOD(getShareExtensionPosition,
                  rejecter:(RCTPromiseRejectBlock)reject) {
     @try {
         if (rootView == nil) {
-            resolve(@[]);
+            resolve();
             return;
         }
 
@@ -81,7 +81,7 @@ RCT_REMAP_METHOD(getShareExtensionPosition,
         [result setValue:[NSNumber numberWithFloat:rootViewPosition.size.width] forKey:@"width"];
         [result setValue:[NSNumber numberWithFloat:rootViewPosition.size.height] forKey:@"height"];
 
-        resolve(@[result]);
+        resolve(result);
     } @catch (NSException *e) {
         reject(@"error", e.description, nil);
     }
