@@ -82,7 +82,7 @@ RCT_REMAP_METHOD(getShareExtensionPosition,
     [result setValue:[NSNumber numberWithFloat:rootViewPosition.size.width] forKey:@"width"];
     [result setValue:[NSNumber numberWithFloat:rootViewPosition.size.height] forKey:@"height"];
 
-    resolve(result);
+    resolve(@[result]);
 }
 
 - (void)processShareAttachment:(NSEnumerator<NSItemProvider*> *)attachmentEnumerator
