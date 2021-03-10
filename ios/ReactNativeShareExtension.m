@@ -69,12 +69,12 @@ RCT_REMAP_METHOD(getShareExtensionPosition,
                  rejecter:(RCTPromiseRejectBlock)reject) {
     @try {
         if (rootView == nil) {
-            resolve();
+            resolve(@[]);
             return;
         }
-        
+
         CGRect rootViewPosition = [rootView convertRect:rootView.frame toCoordinateSpace:[UIScreen mainScreen].fixedCoordinateSpace];
-        
+
         NSDictionary *result = [[NSMutableDictionary alloc] init];
         [result setValue:[NSNumber numberWithFloat:rootViewPosition.origin.x] forKey:@"x"];
         [result setValue:[NSNumber numberWithFloat:rootViewPosition.origin.y] forKey:@"y"];
