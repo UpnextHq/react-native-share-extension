@@ -73,7 +73,7 @@ RCT_REMAP_METHOD(getShareExtensionPosition,
             return;
         }
 
-        CGRect rootViewPosition = [rootView convertRect:rootView.frame toCoordinateSpace:[UIScreen mainScreen].fixedCoordinateSpace];
+        CGRect rootViewPosition = [rootView convertRect:rootView.frame toCoordinateSpace:[UIScreen mainScreen].coordinateSpace];
 
         NSDictionary *result = [[NSMutableDictionary alloc] init];
         [result setValue:[NSNumber numberWithFloat:rootViewPosition.origin.x] forKey:@"x"];
