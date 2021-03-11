@@ -5,6 +5,8 @@ export type ShareExtensionPosition = {
   y: number;
   width: number;
   height: number;
+  safeAreaTop: number;
+  safeAreaBottom: number;
 }
 
 interface ShareExtension {

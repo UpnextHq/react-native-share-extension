@@ -75,11 +75,15 @@ RCT_REMAP_METHOD(getShareExtensionPosition,
 
         CGRect rootViewPosition = [rootView convertRect:rootView.frame toCoordinateSpace:[UIScreen mainScreen].coordinateSpace];
 
+        UIEdgeInsets insets = [[[UIApplication sharedApplication] keyWindow] safeAreaInsets];
+
         NSDictionary *result = [[NSMutableDictionary alloc] init];
         [result setValue:[NSNumber numberWithFloat:rootViewPosition.origin.x] forKey:@"x"];
         [result setValue:[NSNumber numberWithFloat:rootViewPosition.origin.y] forKey:@"y"];
         [result setValue:[NSNumber numberWithFloat:rootViewPosition.size.width] forKey:@"width"];
         [result setValue:[NSNumber numberWithFloat:rootViewPosition.size.height] forKey:@"height"];
+        [result setValue:[NSNumber numberWithFloat:insets.top] forKey:@"safeAreaTop"];
+        [result setValue:[NSNumber numberWithFloat:insets.bottom] forKey:@"safeAreaBottom"];
 
         resolve(result);
     } @catch (NSException *e) {
