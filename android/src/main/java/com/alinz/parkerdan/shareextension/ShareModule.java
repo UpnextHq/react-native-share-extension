@@ -41,6 +41,11 @@ public class ShareModule extends ReactContextBaseJavaModule {
         }
     }
 
+    @ReactMethod
+    public void getShareExtensionPosition(Promise promise) {
+        promise.resolve(null);
+    }
+
     public WritableArray processIntent() {
         WritableArray sharedData = Arguments.createArray();
 
