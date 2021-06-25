@@ -11,6 +11,7 @@ export type ShareExtensionPosition = {
 
 interface ShareExtension {
   close(): void;
+  closeWithDelay(timeout?: number): Promise<void>;
   data(): Promise<ShareData>;
   openURL(uri: string): void;
   getShareExtensionPosition(): Promise<ShareExtensionPosition | null>
